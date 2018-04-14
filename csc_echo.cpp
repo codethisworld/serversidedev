@@ -33,16 +33,23 @@ int main(){
 		if(fgets(buff,sizeof(buff),stdin)==NULL){
 			printf_and_exit(1,"%s failed for:%s\n","fgets",ferror(stdin));
 		}
-		if((re=write(fd,buff,sizeof(buff)))<0){
+		int len=strlen(buff);
+		if((re=write(fd,buff,len))<0){
 			printf_and_exit(1,"%s failed for:%s\n","write",strerror(errno));
 		}
 		printf("hisin_log,re:%d client fgets and write:%s\n",re,buff);
 		buff[sizeof(buff)-1]=0;
-		while((re=read(fd,buff,sizeof(buff)-1))>0){
+		int cnt=0;
+		while((re=read(fd,buff,sizeof(buff)-1))>=0){
+			buff[re]=0;
 			printf("hisin_log,re:%d client read and fputs:%s\n",re,buff);
 			fputs(buff,stdout);
-			buff[sizeof(buff)-1]=0;
-			re=-1;
+			cnt+=re;
+			if(cnt==len){
+				break;
+			}else if(cnt>len){
+				printf_and_exit(1,"%s failed for:%s\n","read","cnt[%d]>len[%d]",cnt,len);
+			}
 		}
 		if(re<0){
 			printf_and_exit(1,"%s failed for:%s\n","read",strerror(errno));

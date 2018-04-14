@@ -66,10 +66,10 @@ int main(){
 			char buff[1024];
 			buff[sizeof(buff)-1]=0;
 			while((len=read(clifd,buff,sizeof(buff)-1))>0){
-				printf("hisin_log,len:%d server read and write:%s\n",len,buff);
-				if(write(clifd,buff,sizeof(buff))<0){
+				if(write(clifd,buff,len)<0){
 					printf_and_exit(1,"%s failed for:%s\n","write",strerror(errno));
 				}
+				printf("hisin_log,len:%d server read and write:%s\n",len,buff);
 				buff[sizeof(buff)-1]=0;
 			}
 			if(len<0){

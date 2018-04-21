@@ -29,12 +29,43 @@ void concurrent_printf(pthread_mutex_t* pmutex,const char* format,...){
 	pthread_mutex_unlock(pmutex);
 	va_end(va);
 }
+void sigchld_func(int signo){
+	if(signo==SIGCHLD){
+		int status;
+		int pid;
+		struct sigaction act;
+		sigaction(SIGCHLD,NULL,&act);
+		if( (act.sa_flags)&SA_NOCLDWAIT ){
+			printf("the sa_flags of SIGCHLD have SA_NOCLDWAIT option,it will not be zombie porcess,skip to use waitpid\n");
+		}
+		while((pid=waitpid(-1,&status,WNOHANG))>0){
+			printf("%d:%d exit\n",getpid(),pid);
+		}
+		//if(pid<0 && errno!= ECHILD){
+		//	printf_and_exit(1,"%s failed for:%s\n","waitpid",strerror(errno));
+		//}
+	}
+}
+struct sigaction mysignal(int signo,void (*func)(int)){
+	struct sigaction act,oact;
+	act.sa_handler=func;
+	sigemptyset(&act.sa_mask);//don't block other signal when this function is running.but signal with the same signo of this fuction is block,so other xxtra signal with the same signo is lost becasuse of no signal queue in unix
+	act.sa_flags=0;
+	sigaction(signo,NULL,&oact);
+	if(oact.sa_handler!=SIG_IGN){
+		sigaction(signo,&act,&oact);
+	}else{
+		printf("[%s] handler is SIG_IGN",strsignal(signo));
+	}
+	return oact;
+}
 ////////////////////////////////////main///////////////////////////////////
 int main(){
 	struct sockaddr_in svraddr;
 	int svrfd;
 	int re;
 	int working=0;
+	mysignal(SIGCHLD,sigchld_func);
 	pthread_mutex_init(&mutex,NULL);
 	concurrent_printf(&mutex,"in %25d:main begin\n",getpid());
 	svrfd=socket(AF_INET,SOCK_STREAM,0);
@@ -52,14 +83,18 @@ int main(){
 		int clifd;
 		int pid;
 		if((clifd=accept(svrfd,(struct sockaddr*)&cliaddr,(socklen_t*)&addrlen))<0){
-			printf_and_exit(1,"%s failed for:%s\n","accept",strerror(errno));
+			if(errno==EINTR){//when prcess func of SIGCHLD return,EINTR may be generated because system is blocked by accept before SIGCHLD
+				continue;
+			}else{
+				printf_and_exit(1,"%s failed for:%s\n","accept",strerror(errno));
+			}
 		}
 		if((pid=fork())==0){
 			concurrent_printf(&mutex,"in %25d:son begin\n",getpid());
 			int childpid;
 			if((childpid=fork())>0){
 				concurrent_printf(&mutex,"in %25d:son end\n",getpid());
-				exit(0);
+				_exit(0);
 			}
 			concurrent_printf(&mutex,"in %25d:grandson begin\n",getpid());
 			int len;
@@ -77,12 +112,7 @@ int main(){
 			}
 			close(clifd);
 			concurrent_printf(&mutex,"in %25d:grandson end\n",getpid());
-			exit(0);
-		}else{
-			int status;
-			if(waitpid(pid,&status,0)<0){
-				printf_and_exit(1,"%s failed for:%s\n","waitpid",strerror(errno));
-			}
+			_exit(0);
 		}
 	}
 	close(svrfd);

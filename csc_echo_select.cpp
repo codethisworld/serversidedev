@@ -35,16 +35,19 @@ void socket_connect(int& svrfd,const int port){
 		print_error(1,"connect",strerror(errno));
 	}
 }
-void read_write(const int& fromfd,const int& tofd,const char* who,const char* exitstr){
+void read_write(const int& fromfd,const int& tofd,int& eof){
 	int re;
 	char buff[MAXLINE];
 	if((re=read(fromfd,buff,sizeof(buff)))<0){
 		print_error(1,"select",strerror(errno));
 	}else if(re==0){//some data may not be received
-		printf_and_exit(0,"%s %s\n",who,exitstr);
+		//printf_and_exit(0,"%s %s\n",who,exitstr);
+		printf("showdown\n");
+		shutdown(tofd,SHUT_WR);
+		eof=1;
 	}
 	int len=re;
-	if((re=write(tofd,buff,len))!=len){
+	if(!eof && (re=write(tofd,buff,len))!=len){
 		print_error(1,"select",strerror(errno));
 	}
 }
@@ -64,6 +67,8 @@ int main(int argc,char* argv[]){
 	if(stdinfd>maxfd){
 		maxfd=stdinfd;
 	}
+	int stdineof=0;
+	int svrfdeof=0;
 	while(1){
 		rset=allset;
 		if((re=select(maxfd+1,&rset,NULL,NULL,NULL))<0){
@@ -72,13 +77,16 @@ int main(int argc,char* argv[]){
 		if(re==0){
 			continue;	
 		}
-		if(FD_ISSET(stdinfd,&rset)){
+		if(!stdineof && FD_ISSET(stdinfd,&rset)){
 			//printf("stdin ready\n");
-			read_write(stdinfd,svrfd,argv[0],"exit normally");
+			read_write(stdinfd,svrfd,stdineof);
 		}
-		if(FD_ISSET(svrfd,&rset)){
+		if(!svrfdeof && FD_ISSET(svrfd,&rset)){
 			//printf("svrfd ready\n");
-			read_write(svrfd,stdoutfd,argv[0],"close by the server");
+			read_write(svrfd,stdoutfd,svrfdeof);
+			if(svrfdeof){
+				exit(0);
+			}
 		}
 	}
 }

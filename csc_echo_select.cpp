@@ -9,8 +9,9 @@
 #include <sys/select.h>//select
 #include <unistd.h>//read write close
 //////////////////////////variables///////////////////////////////////
-enum {MAXFDSIZE=500,MAXLINE=1024};
+enum {MAXFDSIZE=500,MAXLINE=2};
 //////////////////////////functions///////////////////////////////////
+#define print_error(A,B,C) print_error_with_pos(__FILE__,__LINE__,__func__,A,B,C)
 void printf_and_exit(int exitstatus,const char* format,...){
 	va_list va;
 	va_start(va,format);
@@ -18,8 +19,8 @@ void printf_and_exit(int exitstatus,const char* format,...){
 	va_end(va);
 	exit(exitstatus);
 }
-void print_error(int exitstatus,const char* who,const char* why){
-	printf_and_exit(exitstatus,"%s failed for %s\n",who,why);
+void print_error_with_pos(const char* file,int line,const char* func,int exitstatus,const char* who,const char* why){
+	printf_and_exit(exitstatus,"%s:%d::%s\t%s failed for %s\n",file,line,func,who,why);
 }
 void socket_connect(int& svrfd,const int port){
 	struct sockaddr_in svraddr;
@@ -52,6 +53,7 @@ int main(int argc,char* argv[]){
 	int svrfd;
 	int re;
 	int stdinfd=fileno(stdin);
+	int stdoutfd=fileno(stdout);
 	fd_set rset,allset; 
 	socket_connect(svrfd,25000);
 	
@@ -71,10 +73,12 @@ int main(int argc,char* argv[]){
 			continue;	
 		}
 		if(FD_ISSET(stdinfd,&rset)){
+			//printf("stdin ready\n");
 			read_write(stdinfd,svrfd,argv[0],"exit normally");
 		}
 		if(FD_ISSET(svrfd,&rset)){
-			read_write(svrfd,stdinfd,argv[0],"close by the server");
+			//printf("svrfd ready\n");
+			read_write(svrfd,stdoutfd,argv[0],"close by the server");
 		}
 	}
 }

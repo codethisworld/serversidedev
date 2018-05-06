@@ -12,6 +12,7 @@
 /////////////////////////////////////////variables/////////////////////////////////////
 enum {MAXFDSIZE=500,BACKLOG=1000,MAXLINE=1024};
 /////////////////////////////////////////func//////////////////////////////////////////
+#define print_error(A,B,C) print_error_with_pos(__FILE__,__LINE__,__func__,A,B,C)
 void printf_and_exit(int exitstatus,const char* format,...){
 	va_list va;
 	va_start(va,format);
@@ -19,8 +20,8 @@ void printf_and_exit(int exitstatus,const char* format,...){
 	va_end(va);
 	exit(exitstatus);
 }
-inline void print_error(int exitstatus,const char* who,const char* why){
-	printf_and_exit(exitstatus,"%s failed for:%d\n",who,why);
+inline void print_error_with_pos(const char* file,int line,const char* func,int exitstatus,const char* who,const char* why){
+	printf_and_exit(exitstatus,"%s:%d::%s\t%s failed for:%d\n",file,line,func,who,why);
 }
 void socket_bind_listen(int& svrfd,const int port){
 	int re;

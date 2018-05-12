@@ -6,7 +6,10 @@
 #include <stdarg.h>//va_list
 #include <string.h>//strerror
 #include <errno.h>//errno
-#include <sys/select.h>//select
+//#include <sys/select.h>//select
+#include <poll.h>
+//#include <sys/stropts.h>//INFTIM
+#include <climits>//INT_MAX
 #include <sys/time.h>//timeval
 #include <unistd.h>//write close
 /////////////////////////////////////////variables/////////////////////////////////////
@@ -41,46 +44,41 @@ void socket_bind_listen(int& svrfd,const int port){
 	}
 }
 /////////////////////////////////////////main//////////////////////////////////////////
-int main(){
+int main(int argc,const char* argv[]){
 	int svrfd;
 	int re;
-	fd_set allset;//all fd that need to be test
-	fd_set rset;//fd_set used to call select,may be changed
-	int maxfd;//used for maxfdp1
-	int clifds[MAXFDSIZE];//client fd array
+	if(argc<2){
+		print_error(1,"parse input","port is needed");
+	}
+	int port=atoi(argv[1]);
+	struct pollfd clients[MAXFDSIZE];//client fd array
 	int maxi;//max index of client fd array,used for test result loop
-	socket_bind_listen(svrfd,25000);
-
-	FD_ZERO(&allset);
-	FD_SET(svrfd,&allset);
-	maxfd=svrfd;
+	socket_bind_listen(svrfd,port);
 
 	for(int i=0;i<MAXFDSIZE;i++){
-		clifds[i]=-1;
+		clients[i].fd=-1;
 	}
-	maxi=-1;
+	clients[0].fd=svrfd;
+	clients[0].events=POLLRDNORM;
+	maxi=0;
 
 	while(1){
-		rset=allset;
-		if((re=select(maxfd+1,&rset,NULL,NULL,NULL))<0){
+		if((re=poll(clients,maxi+1,INT_MAX))<0){
 			print_error(1,"select",strerror(errno));
 		}else if(re==0){
 			continue;
 		}
 		int fdnum=re;
-		if(FD_ISSET(svrfd,&rset)){
+		if(clients[0].revents&(POLLRDNORM)){
 			if((re=accept(svrfd,NULL,NULL))<0){
 				print_error(1,"accept",strerror(errno));
 			}
 			int clifd=re;
-			FD_SET(clifd,&allset);
-			if(clifd>maxfd){
-				maxfd=clifd;
-			}
 			int i;
 			for(i=0;i<MAXFDSIZE;i++){
-				if(clifds[i]==-1){
-					clifds[i]=clifd;
+				if(clients[i].fd==-1){
+					clients[i].fd=clifd;
+					clients[i].events=POLLRDNORM;
 					break;
 				}
 			}
@@ -95,23 +93,19 @@ int main(){
 		}
 		for(int i=0;i<=maxi;i++){
 			char buff[MAXLINE];
-			if(FD_ISSET(clifds[i],&rset)){
-				if((re=read(clifds[i],buff,MAXLINE))<0){
+			if(clients[i].revents&(POLLRDNORM|POLLERR)){
+				if((re=read(clients[i].fd,buff,MAXLINE))<0){
 					print_error(1,"read",strerror(errno));
 				}
 				if(re==0){
-					printf("connect %d closed\n",clifds[i]);
-					close(clifds[i]);
-					FD_CLR(clifds[i],&allset);
-					if(clifds[i]==maxfd){
-						maxfd--;
-					}
-					clifds[i]=-1;
+					printf("connect %d closed\n",clients[i].fd);
+					close(clients[i].fd);
+					clients[i].fd=-1;
 					continue;
 					//if we decrease maxi here,then some fd will not be checked.we should do it after all fds are checked
 				}
 				int len=re;
-				if((re=write(clifds[i],buff,len))<0){
+				if((re=write(clients[i].fd,buff,len))<0){
 					print_error(1,"write",strerror(errno));
 				}
 				if(--fdnum<=0){
@@ -119,7 +113,7 @@ int main(){
 				}
 			}
 		}
-		for(int i=maxi;i>=0 && clifds[i]==-1;i--){
+		for(int i=maxi;i>=0 && clients[i].fd==-1;i--){
 			maxi--;
 		}
 	}

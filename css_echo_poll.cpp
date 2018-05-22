@@ -63,7 +63,7 @@ int main(int argc,const char* argv[]){
 	maxi=0;
 
 	while(1){
-		if((re=poll(clients,maxi+1,INT_MAX))<0){
+		if((re=poll(clients,maxi+1,-1))<0){
 			print_error(1,"select",strerror(errno));
 		}else if(re==0){
 			continue;

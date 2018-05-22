@@ -73,7 +73,7 @@ int main(int argc,char* argv[]){
 	fds[1].fd=svrfd;
 	fds[1].events=POLLRDNORM;
 	while(1){
-		if((re=poll(fds,2,INT_MAX))<0){
+		if((re=poll(fds,2,-1))<0){
 			print_error(1,"select",strerror(errno));
 		}
 		if(re==0){

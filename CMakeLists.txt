@@ -1,0 +1,10 @@
+cmake_minimum_required (VERSION 2.8)
+project (serversidedev)
+add_subdirectory (lib)
+add_executable (css_echo_udp css_echo_udp.cpp)
+add_executable (csc_echo_udp csc_echo_udp.cpp)
+add_executable (test_va_args_macro test_va_args_macro.cpp)
+
+target_link_libraries (test_va_args_macro lhf)
+target_link_libraries (css_echo_udp lhf)
+target_link_libraries (csc_echo_udp lhf)

@@ -32,3 +32,14 @@ void printf_and_exit(const int exitstatus,const char* format,...){
 	va_end(va);
 	exit(exitstatus);
 }
+void hex_dump(void const* vp,size_t n){
+	int alignlen=sizeof(int);
+	unsigned char const *p=(unsigned char const *)vp;
+	for(size_t i=0;i<n;i++){
+		printf("%3d ",p[i]);
+		if((i%alignlen)==alignlen-1){
+			printf("   ");
+		}
+	}
+	putchar('\n');
+}

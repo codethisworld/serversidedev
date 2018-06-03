@@ -15,4 +15,5 @@ void printf_log_low(const char* file,const int line,const char* func,const char*
 void print_error_low(const char* file,const int line,const char* func,int exitstatus,const char* who,const char* why);
 inline void print_error_inline(int exitstatus,const char* who,const char* why);
 void printf_and_exit(const int exitstatus,const char* format,...);
+void hex_dump(void const* vp,size_t n);
 #endif//__LHF_H__

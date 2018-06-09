@@ -19,8 +19,17 @@ void printf_log_low(const char* file,const int line,const char* func,const char*
 	}
 	va_end(va);
 }
-void print_error_low(const char* file,const int line,const char* func,int exitstatus,const char* who,const char* why){
-	printf_and_exit(exitstatus,"%s:%d::%s\t%s failed for: %s\n",file,line,func,who,why);
+void print_error_low(const char* file,const int line,const char* func,int exitstatus,const char* who,const char* why,...){
+	int re;
+	va_list va;
+	va_start(va,why);
+	char buff[MAXLINE];
+	if((re=vsprintf(buff,why,va))<0){
+		perror(buff);
+		printf_and_exit(1,"%s failed for %s:%d\n","vsprintf","return value is negative",re);
+	}
+	va_end(va);
+	printf_and_exit(exitstatus,"%s:%d::%s\t%s failed for: %s\n",file,line,func,who,buff);
 }
 inline void print_error_inline(int exitstatus,const char* who,const char* why){
 	printf_and_exit(exitstatus,"%s:%d::%s\t%s failed for: %s\n",__FILE__,__LINE__,__func__,who,why);

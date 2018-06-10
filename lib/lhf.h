@@ -7,7 +7,7 @@
 #endif//DEBUG
 enum {MAXLINE=1024,BACKLOG=1024};
 //////////////////////////////////declerations//////////////////////////
-#define printf_log_c99(level,format,...) printf_log_low(__FILE__,__LINE__,__func__,level, format,__VA_ARGS__)
+#define printf_log_c99(level,format,...) printf_log_low(__FILE__,__LINE__,__func__,level, format,##__VA_ARGS__)
 #define printf_log_gcc(level,format,arg...) printf_log_low(__FILE__,__LINE__,__func__,level, format,##arg)
 void printf_log_low(const char* file,const int line,const char* func,const char* level,const char* format,...);
 //##__VA_ARGS__ vs __VA_ARGS__ : __VA_ARGS__ will failed is ... is empty because of the extra ',' while ##__VA_ARGS__ will remove the extra ',' in this case

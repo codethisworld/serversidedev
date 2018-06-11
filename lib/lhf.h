@@ -16,4 +16,5 @@ void print_error_low(const char* file,const int line,const char* func,int exitst
 inline void print_error_inline(int exitstatus,const char* who,const char* why);
 void printf_and_exit(const int exitstatus,const char* format,...);
 void hex_dump(void const* vp,size_t n);
+long strtol_on_error_exit(const char *str,char** pend,const int base,const bool fullmatch);
 #endif//__LHF_H__

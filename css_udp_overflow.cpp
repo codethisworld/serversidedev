@@ -8,14 +8,16 @@
 #include <stdlib.h>
 ////////////////////variables////////////////////
 static int cout=0;
+static int n=0;
 enum {MSG_SIZE=1400};
 ////////////////////fuctions////////////////////
 void print_msg_cout(int signum){
+    printf_log_c99("info","setsockopt:%d*1400\n",n/1400);
     printf_log_c99("info","server received %d msg\n",cout);
     exit(0);
 }
 ////////////////////main////////////////////
-int main(){
+int main(int argc,char* argv[]){
     int re;
     int srvfd;
     struct sockaddr_in srvaddr;
@@ -35,8 +37,18 @@ int main(){
         print_error(1,"bind",strerror(errno));
     }
     signal(SIGINT,print_msg_cout);
+    if(argc>1){
+        char *end;
+        n=strtol_on_error_exit(argv[1],&end,10,true);
+        n*=1400;
+    }else{
+        n=30*1400;
+    }
+    if((re=setsockopt(srvfd,SOL_SOCKET,SO_RCVBUF,&n,sizeof(n)))<0){
+        print_error(1,"setsockopt",strerror(errno));
+    }
     while((re=recvfrom(srvfd,buff,sizeof(buff),0,(struct sockaddr*)&srvaddr,(socklen_t*)&len))>=0){
-        printf_log_c99("info","recvfrom:%d\n",re);
+        //printf_log_c99("info","recvfrom:%d\n",re);
         cout++;
     }
     print_error(1,"recvfrom",strerror(errno));

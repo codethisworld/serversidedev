@@ -38,7 +38,9 @@ void udp_close_connection(int sockfd){
 int main(){
 	int  srvfd;
 	int len;
+    int re;
 	struct sockaddr_in srvaddr;
+    struct sockaddr_in realaddr;
 	char buff[MAXLINE];
 	if((srvfd=socket(AF_INET,SOCK_DGRAM,0))<0){
 		print_error(1,"socket",strerror(errno));
@@ -52,6 +54,14 @@ int main(){
 	if(connect(srvfd,(struct sockaddr*)(&srvaddr),sizeof(srvaddr))<0){
 		print_error(1,"connect",strerror(errno));
 	}
+    if((re=getsockname(srvfd,(struct sockaddr*)&realaddr,(socklen_t*)&len))<0){
+		print_error(1,"getsockname",strerror(errno));
+    }else{
+        if((inet_ntop(AF_INET,&(realaddr.sin_addr),buff,sizeof(buff)))==NULL){
+            print_error(1,"inet_ntop",strerror(errno));
+        }
+        printf("real srvaddr: %s:%d %d\n",buff,ntohs(realaddr.sin_port),realaddr.sin_port);
+    }
 	while((fgets(buff,sizeof(buff),stdin))!=NULL){
 		len=strlen(buff)+1;
 		sendto_recvfrom_fputs_after_connect(srvfd,buff,len,stdout);

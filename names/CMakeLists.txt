@@ -9,3 +9,6 @@ add_executable (hostent hostent.cpp)
 add_executable (daytimetcpcli1 daytimetcpcli1.cpp)
 target_link_libraries (hostent lhf)
 target_link_libraries (daytimetcpcli1 lhf)
+
+install (TARGETS hostent daytimetcpcli1
+			RUNTIME DESTINATION bin)

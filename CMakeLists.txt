@@ -1,6 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
 project (serversidedev)
-set(CMAKE_INSTALL_PREFIX ~/)
 add_subdirectory (lib)
 add_subdirectory (names)
 add_executable (css_echo_udp css_echo_udp.cpp)
@@ -35,3 +34,6 @@ target_link_libraries (csc_echo_udp_connect lhf)
 target_link_libraries (css_echo_udp_connect lhf)
 target_link_libraries (csc_udp_overflow lhf)
 target_link_libraries (css_udp_overflow lhf)
+
+install (TARGETS css_echo_udp csc_echo_udp csc_echo_poll css_echo_poll csc_echo_select css_echo_select csc_echo css_echo csc css sigaction_waitpidC sigaction_waitpidS my_string object_size_empty test_map test_qsort test_strace test_coredump test_va_args_macro test_fork_and_waitpid csc_echo_udp_connect css_echo_udp_connect csc_udp_overflow css_udp_overflow
+			RUNTIME DESTINATION bin)

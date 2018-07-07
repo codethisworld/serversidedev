@@ -1,5 +1,11 @@
 #ifndef __LHF_H__
 #define __LHF_H__
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
 //////////////////////////////////variables/////////////////////////////
 #ifndef DEBUG
 	//this variable will not be effective unless is it is set in a file that will be finally included by lhf.cpp 
@@ -17,4 +23,10 @@ inline void print_error_inline(int exitstatus,const char* who,const char* why);
 void printf_and_exit(const int exitstatus,const char* format,...);
 void hex_dump(void const* vp,size_t n);
 long strtol_on_error_exit(const char *str,char** pend,const int base,const bool fullmatch);
+
+
+int daemon_init(const char *pname,int facility);
+int tcp_listen(const char *host, const char *serv, socklen_t *addrlenp);
+void dump_addrinfo(const char *prefix,struct addrinfo *pai);
+void dump_sockaddr(const char *prefix,struct sockaddr *psa);
 #endif//__LHF_H__

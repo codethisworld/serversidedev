@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <climits>
 #include "lhf.h"
+#include <netdb.h>
 //////////////////////////////////functions/////////////////////////////
 void printf_log_low(const char* file,const int line,const char* func,const char* level,const char* format,...){
 	va_list va;
@@ -54,6 +55,43 @@ void hex_dump(void const* vp,size_t n){
 	}
 	putchar('\n');
 }
+void dump_addrinfo(const char *prefix,struct addrinfo *pai){
+	static int calltimes=0;
+	char buff[MAXLINE];
+	calltimes++;
+	printf("%d in %lu address:0x%x\n",calltimes,getpid(),pai);
+	printf("%s%-15s %d\n",prefix,"ai_flags",pai->ai_flags);
+	printf("%s%-15s %d\n",prefix,"ai_family",pai->ai_family);
+	printf("%s%-15s %d\n",prefix,"ai_socktype",pai->ai_socktype);
+	printf("%s%-15s %d\n",prefix,"ai_protocol",pai->ai_protocol);
+	printf("%s%-15s %d\n",prefix,"ai_addrlen",pai->ai_addrlen);
+	printf("%s%-15s %x\n",prefix,"ai_addr",pai->ai_addr);
+	snprintf(buff,sizeof(buff),"%s\t",prefix);
+	dump_sockaddr(buff,pai->ai_addr);
+	printf("%s%-15s %s\n",prefix,"ai_canonname",pai->ai_canonname);
+	printf("%s%-15s %x\n\n",prefix,"ai_next",pai->ai_next);
+}
+void dump_sockaddr(const char *prefix,struct sockaddr *psa){
+	static int calltimes=0;
+	char buff[MAXLINE];
+	calltimes++;
+	printf("%d in %lu address:0x%x\n",calltimes,getpid(),psa);
+	if(psa->sa_family==AF_INET){
+		struct sockaddr_in *psa_in=(struct sockaddr_in*)psa;
+		printf("%s%-15s %d(%s)\n",prefix,"sin_family",psa_in->sin_family,"AF_INET");
+		printf("%s%-15s %d\n",prefix,"sin_port",ntohs(psa_in->sin_port));
+		printf("%s%-15s %s\n\n",prefix,"sin_addr",inet_ntop(AF_INET,&(psa_in->sin_addr),buff,sizeof((psa_in->sin_addr))));
+	}else if(psa->sa_family==AF_INET6){
+		struct sockaddr_in6 *psa_in=(struct sockaddr_in6*)psa;
+		printf("%s%-15s %d(%s)\n",prefix,"sin6_family",psa_in->sin6_family,"AF_INET6");
+		printf("%s%-15s %d\n",prefix,"sin6_port",ntohs(psa_in->sin6_port));
+		printf("%s%-15s %d(%s)\n",prefix,"sin6_flowinfo",psa_in->sin6_flowinfo);
+		printf("%s%-15s %s\n",prefix,"sin6_addr",inet_ntop(AF_INET6,&(psa_in->sin6_addr),buff,sizeof((psa_in->sin6_addr))));
+		printf("%s%-15s %d(%s)\n\n",prefix,"sin6_scope_id",psa_in->sin6_scope_id);
+	}else{
+		printf("sa_family:%d is not AF_INET(%d) and not AF_INET6(%d)\n",psa->sa_family,AF_INET,AF_INET6);
+	}
+}
 //https://linux.die.net/man/3/strtol
 long strtol_on_error_exit(const char *str,char** pend,const int base,const bool fullmatch){
     long re;
@@ -70,4 +108,52 @@ long strtol_on_error_exit(const char *str,char** pend,const int base,const bool 
         }
     }
     return re;
+}
+int tcp_listen(const char *host, const char *serv, socklen_t *addrlenp){
+	struct addrinfo hints,*paddrinfo,*addrhead;
+	int re;
+	int srvfd;
+	const int on=1;
+	bzero(&hints,sizeof(hints));
+	hints.ai_flags=AI_PASSIVE;//server side
+	hints.ai_family=AF_UNSPEC;//both IPv4 and IPv6 is ok
+	hints.ai_socktype=SOCK_STREAM;//tcp
+	if((re=getaddrinfo(host,serv,&hints,&paddrinfo))<0){
+		print_error(1,"getaddrinfo",gai_strerror(re));
+	}
+	addrhead=paddrinfo;
+	while(paddrinfo!=NULL){
+		dump_addrinfo("",paddrinfo);
+		if((re=socket(paddrinfo->ai_family,paddrinfo->ai_socktype,paddrinfo->ai_protocol))<0){
+			printf_log_c99("info","%s failed for:%d\n","socket",strerror(errno));
+			paddrinfo=paddrinfo->ai_next;
+			continue;
+		}
+		srvfd=re;
+		if((re=setsockopt(srvfd,SOL_SOCKET,SO_REUSEADDR,&on,sizeof(on)))<0){//note
+			printf_log_c99("info","%s failed for:%d\n","setsockopt",strerror(errno));
+			paddrinfo=paddrinfo->ai_next;
+			close(srvfd);
+			continue;
+		}
+		if((re=bind(srvfd,paddrinfo->ai_addr,paddrinfo->ai_addrlen))<0){
+			printf_log_c99("info","%s failed for:%d\n","bind",strerror(errno));
+			paddrinfo=paddrinfo->ai_next;
+			close(srvfd);
+			continue;
+		}
+		if((re=listen(srvfd,BACKLOG))<0){
+			printf_log_c99("info","%s failed for:%d\n","listen",strerror(errno));
+			paddrinfo=paddrinfo->ai_next;
+			close(srvfd);
+			continue;
+		}
+		*addrlenp=paddrinfo->ai_addrlen;
+		break;
+	}
+	if(paddrinfo==NULL){
+		return re;
+	}else{
+		return srvfd;;
+	}
 }

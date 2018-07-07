@@ -8,3 +8,6 @@ tags
 *Makefile
 *cmake_install.cmake
 *CMakeFiles*
+*.a
+bld/*
+install/*

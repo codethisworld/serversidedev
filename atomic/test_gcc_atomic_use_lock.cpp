@@ -8,17 +8,15 @@ pthread_mutex_t gmutex;
 long long gnum=1000;
 ////////////////////functions////////////////////
 void* work_thread(void* arg){
-	long long num_cache=gnum;
-	long long current_num;
 	long index=(long)arg;
-	while(num_cache>0){
-		current_num=__sync_val_compare_and_swap(&gnum,num_cache,num_cache-1);
-		if(current_num==num_cache){
-			num_cache--;
-			//printf("%010lld\t%4ld\n",num_cache,index);
-		}else{
-			num_cache=current_num;
+	int num_cache=gnum;
+	while(num_cache){
+		pthread_mutex_lock(&gmutex);
+		if(gnum>0){
+			gnum--;	
 		}
+		num_cache=gnum;
+		pthread_mutex_lock(&gmutex);
 	}
 }
 ////////////////////main////////////////////
@@ -49,7 +47,7 @@ int main(int argc,char* argv[]){
 	pthread_mutex_destroy(&gmutex);
 	free(threads);
 	end=clock();
-	use=end-begin;	
+	use=end-begin;
 	printf("in main:%d use %d second(%d)\n",gnum,use/CLOCKS_PER_SEC,use);
 	return 0;
 }

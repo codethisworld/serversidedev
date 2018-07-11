@@ -7,6 +7,24 @@
 pthread_mutex_t gmutex;
 long long gnum=1000;
 ////////////////////functions////////////////////
+/**
+condition diff between every case
+return *variablep values before the operation:
+	if this old_value satisfy the condition,then go on working,local_value=old_value+offset
+	otherwise,it is due to the failed conditon check,local_value=old_value
+*/
+long long ll_gcc_atomic_conditional_change(long long *variablep,long long offset){
+	long long old_value;
+	bool atomic;
+	while((old_value=*variablep)>0){//while satisfy condition,try to change control data and begin to work
+		atomic=__sync_bool_compare_and_swap(variablep,old_value,old_value+offset);
+		if(atomic){
+			//do real work here
+			break;
+		}
+	}
+	return old_value;
+}
 void* work_thread(void* arg){
 	long long num_cache=gnum;
 	long long current_num;

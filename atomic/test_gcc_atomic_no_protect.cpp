@@ -8,10 +8,10 @@ pthread_mutex_t gmutex;
 long long gnum=1000;
 ////////////////////functions////////////////////
 void* work_thread(void* arg){
-	long index=(long)arg;
 	while(gnum>0){
 		gnum--;	
 	}
+	return NULL;
 }
 ////////////////////main////////////////////
 int main(int argc,char* argv[]){
@@ -42,6 +42,6 @@ int main(int argc,char* argv[]){
 	free(threads);
 	end=clock();
 	use=end-begin;
-	printf("in main:%d use %d second(%d)\n",gnum,use/CLOCKS_PER_SEC,use);
+	printf("in main:%lld use %ld second(%ld)\n",gnum,use/CLOCKS_PER_SEC,use);
 	return 0;
 }

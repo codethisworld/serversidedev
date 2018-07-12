@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 2.8)
 project (serversidedev)
 # set(CMAKE_INSTALL_PREFIX ~/)
+SET( CMAKE_CXX_FLAGS  "-g -Wall" )
 add_subdirectory (lib)
 add_subdirectory (names)
 add_subdirectory (initd)

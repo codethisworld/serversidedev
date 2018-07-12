@@ -59,7 +59,7 @@ void dump_addrinfo(const char *prefix,struct addrinfo *pai){
 	static int calltimes=0;
 	char buff[MAXLINE];
 	calltimes++;
-	printf("%d in %lu address:0x%x\n",calltimes,getpid(),pai);
+	printf("%d in %d address:0x%x\n",calltimes,getpid(),pai);
 	printf("%s%-15s %d\n",prefix,"ai_flags",pai->ai_flags);
 	printf("%s%-15s %d\n",prefix,"ai_family",pai->ai_family);
 	printf("%s%-15s %d\n",prefix,"ai_socktype",pai->ai_socktype);
@@ -75,7 +75,7 @@ void dump_sockaddr(const char *prefix,struct sockaddr *psa){
 	static int calltimes=0;
 	char buff[MAXLINE];
 	calltimes++;
-	printf("%d in %lu address:0x%x\n",calltimes,getpid(),psa);
+	printf("%d in %d address:0x%x\n",calltimes,getpid(),psa);
 	if(psa->sa_family==AF_INET){
 		struct sockaddr_in *psa_in=(struct sockaddr_in*)psa;
 		printf("%s%-15s %d(%s)\n",prefix,"sin_family",psa_in->sin_family,"AF_INET");

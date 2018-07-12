@@ -10,16 +10,15 @@ long long gnum=1000;
 void* work_thread(void* arg){
 	long long num_cache=gnum;
 	long long current_num;
-	long index=(long)arg;
 	while(num_cache>0){
 		current_num=__sync_val_compare_and_swap(&gnum,num_cache,num_cache-1);
 		if(current_num==num_cache){
 			num_cache--;
-			//printf("%010lld\t%4ld\n",num_cache,index);
 		}else{
 			num_cache=current_num;
 		}
 	}
+	return NULL;
 }
 ////////////////////main////////////////////
 int main(int argc,char* argv[]){
@@ -49,7 +48,7 @@ int main(int argc,char* argv[]){
 	pthread_mutex_destroy(&gmutex);
 	free(threads);
 	end=clock();
-	use=end-begin;	
-	printf("in main:%d use %d second(%d)\n",gnum,use/CLOCKS_PER_SEC,use);
+	use=end-begin;
+	printf("in main:%lld use %ld second(%ld)\n",gnum,use/CLOCKS_PER_SEC,use);
 	return 0;
 }

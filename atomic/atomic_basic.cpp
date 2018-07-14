@@ -7,12 +7,6 @@
 pthread_mutex_t gmutex;
 long long gnum=1000;
 ////////////////////functions////////////////////
-/**
-condition diff between every case
-return *pval values before the operation:
-	if this old_value satisfy the condition,then go on working,local_value=old_value+offset
-	otherwise,it is due to the failed conditon check,local_value=old_value
-*/
 long long val_check_change_work_if_atomic(long long *pval,long long offset,bool (*is_check_ok)(long long cul_val),int (*work_func)(long long val)){
 	long long now_val;
 	bool atomic;

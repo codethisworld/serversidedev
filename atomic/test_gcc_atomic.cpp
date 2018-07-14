@@ -8,14 +8,13 @@ pthread_mutex_t gmutex;
 long long gnum=1000;
 ////////////////////functions////////////////////
 void* work_thread(void* arg){
-	long long num_cache=gnum;
-	long long current_num;
-	while(num_cache>0){
-		current_num=__sync_val_compare_and_swap(&gnum,num_cache,num_cache-1);
-		if(current_num==num_cache){
-			num_cache--;
-		}else{
-			num_cache=current_num;
+	long long now_val;
+	bool atomic;
+	while((now_val=gnum)>0){
+		atomic=__sync_bool_compare_and_swap(&gnum,now_val,now_val-1);
+		if(atomic){
+			//ok,work here
+			//long long next_val=now_val-1
 		}
 	}
 	return NULL;

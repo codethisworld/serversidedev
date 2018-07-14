@@ -9,35 +9,42 @@ long long gnum=1000;
 ////////////////////functions////////////////////
 /**
 condition diff between every case
-return *variablep values before the operation:
+return *pval values before the operation:
 	if this old_value satisfy the condition,then go on working,local_value=old_value+offset
 	otherwise,it is due to the failed conditon check,local_value=old_value
 */
-long long ll_gcc_atomic_conditional_change(long long *variablep,long long offset){
-	long long old_value;
+long long val_check_change_work_if_atomic(long long *pval,long long offset,bool (*is_check_ok)(long long cul_val),int (*work_func)(long long val)){
+	long long now_val;
 	bool atomic;
-	while((old_value=*variablep)>0){//while satisfy condition,try to change control data and begin to work
-		atomic=__sync_bool_compare_and_swap(variablep,old_value,old_value+offset);
+	while(is_check_ok(now_val=*pval)){
+		atomic=__sync_bool_compare_and_swap(pval,now_val,now_val+offset);
 		if(atomic){
-			//do real work here
-			break;
+			//long long next_val=now_val+offset;
+			work_func(now_val);
 		}
 	}
-	return old_value;
+	return now_val;
+}
+inline bool work_thread_check_func(long long val){
+	return val>0;
+}
+int work_thread_work_func(long long val){
+	//printf("%d work on %lld\n",getpid(),val);
+	return 0;
 }
 void* work_thread(void* arg){
-	long long num_cache=gnum;
-	long long current_num;
-	long index=(long)arg;
-	while(num_cache>0){
-		current_num=__sync_val_compare_and_swap(&gnum,num_cache,num_cache-1);
-		if(current_num==num_cache){
-			num_cache--;
-			//printf("%010lld\t%4ld\n",num_cache,index);
-		}else{
-			num_cache=current_num;
-		}
+	long now_val;
+	while(work_thread_check_func(now_val=val_check_change_work_if_atomic(
+									&gnum
+									,-1
+									,work_thread_check_func
+									,work_thread_work_func	
+								)
+		)
+	){
+
 	}
+	return NULL;
 }
 ////////////////////main////////////////////
 int main(int argc,char* argv[]){
@@ -68,6 +75,6 @@ int main(int argc,char* argv[]){
 	free(threads);
 	end=clock();
 	use=end-begin;	
-	printf("in main:%d use %d second(%d)\n",gnum,use/CLOCKS_PER_SEC,use);
+	printf("in main:%lld use %ld second(%ld)\n",gnum,use/CLOCKS_PER_SEC,use);
 	return 0;
 }

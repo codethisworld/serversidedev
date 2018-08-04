@@ -35,7 +35,6 @@ void udp_echo(const int srvfd,struct sockaddr* pcliaddr,int& addrlen){
 ///////////////////////////////////////////main//////////////////////////////////////
 int main(){
 	int  srvfd;
-	int re;
 	udp_socket_bind(srvfd,25000);
 	while(1){
 		struct sockaddr_in src_addr;

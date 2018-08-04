@@ -109,7 +109,6 @@ void* produce_thread(void* arg){
 	pthread_exit(NULL);
 }
 void* consume_thread(void* arg){
-	int index=(int)(long)arg;
 	int cnt_cache;
 	while((cnt_cache=gconsume_cnt)<gproduct_num){
 		bool atomic=__sync_bool_compare_and_swap(&gconsume_cnt,cnt_cache,cnt_cache+1);
@@ -127,14 +126,14 @@ int main(int argc,char* argv[]){
 	if(argc<5){
 		usage(argc,argv);
 	}
-	clock_t begin,end,use;
+	//clock_t begin,end,use;
 	gbuff_size=atoi(argv[1]);
 	gproduce_num=atoi(argv[2]);
 	gconsume_num=atoi(argv[3]);
 	gproduct_num=atoi(argv[4]);
 	int thread_num=gproduce_num+gconsume_num;
 	
-	begin=clock();
+	//begin=clock();
 	gca=new concurrent_array<int>(gbuff_size);
 	pthread_t threads[thread_num];
 	for(int i=0;i<thread_num;i++){
@@ -149,8 +148,8 @@ int main(int argc,char* argv[]){
 			print_error(1,"pthread_create",strerror(errno));
 		}
 	}
-	end=clock();
-	use=end-begin;
+	//end=clock();
+	//use=end-begin;
 	//printf("buff:%d produce:%d consume:%d product:%d time:%ld(%ld)\n",gbuff_size,gproduce_num,gconsume_num,gproduct_num,use/CLOCKS_PER_SEC,use);
 	assert(gca->is_empty());
 	return 0;

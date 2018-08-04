@@ -43,9 +43,9 @@ int daemon_init(const char *pname,int facility){
         print_error(1,"setsid",strerror(errno));
     }
     //4. close all opened descriptor
-	printf("%10s %d %ld\n","stdin",STDIN_FILENO,stdin);
-	printf("%10s %d %ld\n","stdout",STDOUT_FILENO,stdout);
-	printf("%10s %d %ld\n","stderr",STDERR_FILENO,stderr);
+	printf("%10s %d %d\n","stdin",STDIN_FILENO,fileno(stdin));
+	printf("%10s %d %d\n","stdout",STDOUT_FILENO,fileno(stdout));
+	printf("%10s %d %d\n","stderr",STDERR_FILENO,fileno(stderr));
     for(i=3;i<MAXDESCRIPTOR;i++){
 		close(i);
     }

@@ -1,12 +1,42 @@
+#include <climits>
+#include <errno.h>
+#include <netdb.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include <errno.h>
-#include <climits>
+#include <time.h>
 #include "lhf.h"
-#include <netdb.h>
 //////////////////////////////////functions/////////////////////////////
+int date_echo(int fd){
+	time_t t=time(NULL);
+	char buff[MAXLINE];
+	int len=snprintf(buff,sizeof(buff),ctime(&t));//size include '\0',len not include '\0'
+	if(full_write(fd,buff,len)){
+		printf_log_c99("debug","%s failed\n","full_write");
+		return 1;
+	}
+	return 0;
+}
+int full_write(int fd,char* buff,int len){
+	char* pbuff=buff;
+	int re;
+	while((re=write(fd,pbuff,len))>0){
+		if(re<len){
+			printf_log_c99("debug","len:%d write:%d left:%d\n",len,re,len-re);
+			pbuff+=re;
+			len-=re;
+		}else{
+			break;
+		}
+	}
+	if(re<0){
+		printf_log_c99("debug","%s failed for:%s\n","write",strerror(errno));
+		return 1;
+	}
+	assert(re==0);
+	return 0;	
+}
 void printf_log_low(const char* file,const int line,const char* func,const char* level,const char* format,...){
 	va_list va;
 	va_start(va,format);
@@ -21,6 +51,16 @@ void printf_log_low(const char* file,const int line,const char* func,const char*
 		vprintf(format,va);
 	}
 	va_end(va);
+}
+void printf_and_exit(int exitstatus,const char* format,...){
+	va_list va;
+	va_start(va,format);
+	vprintf(format,va);
+	va_end(va);
+	exit(exitstatus);
+}
+inline void print_error_with_pos(const char* file,int line,const char* func,int exitstatus,const char* who,const char* why){
+	printf_and_exit(exitstatus,"%s:%d::%s\t%s failed for:%s\n",file,line,func,who,why);
 }
 void print_error_low(const char* file,const int line,const char* func,int exitstatus,const char* who,const char* why,...){
 	int re;
@@ -37,15 +77,8 @@ void print_error_low(const char* file,const int line,const char* func,int exitst
 inline void print_error_inline(int exitstatus,const char* who,const char* why){
 	printf_and_exit(exitstatus,"%s:%d::%s\t%s failed for: %s\n",__FILE__,__LINE__,__func__,who,why);
 }
-void printf_and_exit(const int exitstatus,const char* format,...){
-	va_list va;
-	va_start(va,format);
-	vprintf(format,va);
-	va_end(va);
-	exit(exitstatus);
-}
 void hex_dump(void const* vp,size_t n){
-	int alignlen=sizeof(int);
+	unsigned int alignlen=sizeof(int);
 	unsigned char const *p=(unsigned char const *)vp;
 	for(size_t i=0;i<n;i++){
 		printf("%3d ",p[i]);
@@ -59,23 +92,23 @@ void dump_addrinfo(const char *prefix,struct addrinfo *pai){
 	static int calltimes=0;
 	char buff[MAXLINE];
 	calltimes++;
-	printf("%d in %d address:0x%x\n",calltimes,getpid(),pai);
+	printf("%d in %d address:0x%p\n",calltimes,getpid(),pai);
 	printf("%s%-15s %d\n",prefix,"ai_flags",pai->ai_flags);
 	printf("%s%-15s %d\n",prefix,"ai_family",pai->ai_family);
 	printf("%s%-15s %d\n",prefix,"ai_socktype",pai->ai_socktype);
 	printf("%s%-15s %d\n",prefix,"ai_protocol",pai->ai_protocol);
 	printf("%s%-15s %d\n",prefix,"ai_addrlen",pai->ai_addrlen);
-	printf("%s%-15s %x\n",prefix,"ai_addr",pai->ai_addr);
+	printf("%s%-15s %p\n",prefix,"ai_addr",pai->ai_addr);
 	snprintf(buff,sizeof(buff),"%s\t",prefix);
 	dump_sockaddr(buff,pai->ai_addr);
 	printf("%s%-15s %s\n",prefix,"ai_canonname",pai->ai_canonname);
-	printf("%s%-15s %x\n\n",prefix,"ai_next",pai->ai_next);
+	printf("%s%-15s %p\n\n",prefix,"ai_next",pai->ai_next);
 }
 void dump_sockaddr(const char *prefix,struct sockaddr *psa){
 	static int calltimes=0;
 	char buff[MAXLINE];
 	calltimes++;
-	printf("%d in %d address:0x%x\n",calltimes,getpid(),psa);
+	printf("%d in %d address:0x%p\n",calltimes,getpid(),psa);
 	if(psa->sa_family==AF_INET){
 		struct sockaddr_in *psa_in=(struct sockaddr_in*)psa;
 		printf("%s%-15s %d(%s)\n",prefix,"sin_family",psa_in->sin_family,"AF_INET");
@@ -85,9 +118,9 @@ void dump_sockaddr(const char *prefix,struct sockaddr *psa){
 		struct sockaddr_in6 *psa_in=(struct sockaddr_in6*)psa;
 		printf("%s%-15s %d(%s)\n",prefix,"sin6_family",psa_in->sin6_family,"AF_INET6");
 		printf("%s%-15s %d\n",prefix,"sin6_port",ntohs(psa_in->sin6_port));
-		printf("%s%-15s %d(%s)\n",prefix,"sin6_flowinfo",psa_in->sin6_flowinfo);
+		printf("%s%-15s %u\n",prefix,"sin6_flowinfo",psa_in->sin6_flowinfo);
 		printf("%s%-15s %s\n",prefix,"sin6_addr",inet_ntop(AF_INET6,&(psa_in->sin6_addr),buff,sizeof((psa_in->sin6_addr))));
-		printf("%s%-15s %d(%s)\n\n",prefix,"sin6_scope_id",psa_in->sin6_scope_id);
+		printf("%s%-15s %u\n\n",prefix,"sin6_scope_id",psa_in->sin6_scope_id);
 	}else{
 		printf("sa_family:%d is not AF_INET(%d) and not AF_INET6(%d)\n",psa->sa_family,AF_INET,AF_INET6);
 	}
@@ -110,7 +143,7 @@ long strtol_on_error_exit(const char *str,char** pend,const int base,const bool 
     return re;
 }
 int tcp_listen(const char *host, const char *serv, socklen_t *addrlenp){
-	struct addrinfo hints,*paddrinfo,*addrhead;
+	struct addrinfo hints,*paddrinfo;
 	int re;
 	int srvfd;
 	const int on=1;
@@ -121,7 +154,6 @@ int tcp_listen(const char *host, const char *serv, socklen_t *addrlenp){
 	if((re=getaddrinfo(host,serv,&hints,&paddrinfo))<0){
 		print_error(1,"getaddrinfo",gai_strerror(re));
 	}
-	addrhead=paddrinfo;
 	while(paddrinfo!=NULL){
 		dump_addrinfo("",paddrinfo);
 		if((re=socket(paddrinfo->ai_family,paddrinfo->ai_socktype,paddrinfo->ai_protocol))<0){

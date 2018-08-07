@@ -18,7 +18,7 @@ void sendto_recvfrom_fputs_after_connect(int srvfd,char buff[],int len,FILE* out
 	}
 	printf_log_c99("debug","sendto:%d",re);
 	printf_log_c99("debug","send:%s",buff);
-	bzero(buff,sizeof(buff));
+	bzero(buff,len);
 	if((re=recvfrom(srvfd,buff,buffsize-1,0,NULL,0))<0){
 		print_error(1,"recvfrom",strerror(errno));
 	}

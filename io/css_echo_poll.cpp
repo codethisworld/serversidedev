@@ -12,37 +12,8 @@
 #include <climits>//INT_MAX
 #include <sys/time.h>//timeval
 #include <unistd.h>//write close
-/////////////////////////////////////////variables/////////////////////////////////////
-enum {MAXFDSIZE=500,BACKLOG=1000,MAXLINE=1024};
-/////////////////////////////////////////func//////////////////////////////////////////
-#define print_error(A,B,C) print_error_with_pos(__FILE__,__LINE__,__func__,A,B,C)
-void printf_and_exit(int exitstatus,const char* format,...){
-	va_list va;
-	va_start(va,format);
-	vprintf(format,va);
-	va_end(va);
-	exit(exitstatus);
-}
-inline void print_error_with_pos(const char* file,int line,const char* func,int exitstatus,const char* who,const char* why){
-	printf_and_exit(exitstatus,"%s:%d::%s\t%s failed for:%s\n",file,line,func,who,why);
-}
-void socket_bind_listen(int& svrfd,const int port){
-	int re;
-	struct sockaddr_in svraddr;
-	bzero(&svraddr,sizeof(svraddr));
-	if((svrfd=socket(AF_INET,SOCK_STREAM,0))<0){
-		print_error(1,"socket",strerror(errno));
-	}
-	svraddr.sin_family=AF_INET;
-	svraddr.sin_port=htons(port);
-	svraddr.sin_addr.s_addr=htonl(INADDR_ANY);
-	if((re=bind(svrfd,(struct sockaddr*)(&svraddr),sizeof(svraddr)))<0){
-		print_error(1,"bind",strerror(errno));
-	}
-	if((re=listen(svrfd,BACKLOG))<0){
-		print_error(1,"listen",strerror(errno));
-	}
-}
+#include "lhf.h"
+#include "socketio.h"
 /////////////////////////////////////////main//////////////////////////////////////////
 int main(int argc,const char* argv[]){
 	int svrfd;
@@ -53,7 +24,9 @@ int main(int argc,const char* argv[]){
 	int port=atoi(argv[1]);
 	struct pollfd clients[MAXFDSIZE];//client fd array
 	int maxi;//max index of client fd array,used for test result loop
-	socket_bind_listen(svrfd,port);
+	if(socket_bind_listen(svrfd,port)){
+		print_error(1,"socket_bind_listen","");
+	}
 
 	for(int i=0;i<MAXFDSIZE;i++){
 		clients[i].fd=-1;

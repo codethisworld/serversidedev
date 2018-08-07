@@ -19,7 +19,7 @@ void sendto_recvfrom_fputs(int srvfd,char buff[],int len,struct sockaddr* srvadd
 	}
 	printf_log_c99("debug","send:%s",buff);
 	printf_log_c99("debug","sizeof(buff) after endto and before recvfrom:%d\n",sizeof(buff));
-	bzero(buff,sizeof(buff));
+	bzero(buff,len);
 	struct sockaddr_in replyaddr;
 	int replyaddrlen=addrlen;
 	bzero(&replyaddr,sizeof(replyaddr));
@@ -39,7 +39,6 @@ void sendto_recvfrom_fputs(int srvfd,char buff[],int len,struct sockaddr* srvadd
 int main(){
 	int  srvfd;
 	int len;
-	struct sockaddr_in srvaddr;
 	char buff[MAXLINE];
 	printf_log_c99("debug","sizeof(buff) after decleration:%d\n",sizeof(buff));
 	if((srvfd=socket(AF_INET,SOCK_DGRAM,0))<0){

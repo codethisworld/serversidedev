@@ -31,14 +31,16 @@ int main(){
 	if( (n=connect(fd,(struct sockaddr*)&svraddr,sizeof(svraddr))) <0){
 		printf_and_exit(1,"%s failed for:%s\n","connect",strerror(errno));
 	}
-	if((re=read(fd,line,sizeof(line)-1))>0){
-		line[1023]=0;
-		if(fputs(line,stdout)==EOF){
-			printf_and_exit(1,"%s failed for:%s\n","fputs","return EOF");
+	while(1){
+		if((re=read(fd,line,sizeof(line)-1))>0){
+			line[1023]=0;
+			if(fputs(line,stdout)==EOF){
+				printf_and_exit(1,"%s failed for:%s\n","fputs","return EOF");
+			}
 		}
-	}
-	if(re<0){
-		printf_and_exit(1,"%s failed for:%s\n","read",strerror(errno));
+		if(re<0){
+			printf_and_exit(1,"%s failed for:%s\n","read",strerror(errno));
+		}
 	}
 	printf_and_exit(0,"success\n");
 }

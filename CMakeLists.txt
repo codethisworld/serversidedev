@@ -10,6 +10,7 @@ add_subdirectory (basic)
 add_subdirectory (pthread)
 add_subdirectory (io)
 add_subdirectory (signal)
+add_subdirectory (algo)
 
 add_executable (css_echo_udp css_echo_udp.cpp)
 add_executable (csc_echo_udp csc_echo_udp.cpp)

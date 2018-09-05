@@ -9,4 +9,6 @@ tags
 *cmake_install.cmake
 *CMakeFiles*
 install_manifest.txt
+*.a
+bld/*
 install/*

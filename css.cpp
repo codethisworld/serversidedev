@@ -25,6 +25,19 @@ void write_time(int fd){
 		printf_and_exit(1,"%s failed for: %s\n","write",strerror(errno));
 	}
 }
+void write_to_fd_and_close_it(int fd,int time){
+	char buff[1024];
+	int re;
+	for(int i=0;i<time;i++){
+		sprintf(buff,"%d : %d\n",getpid(),i);
+		if((re=write(fd,buff,sizeof(buff)))<0){
+			printf_and_exit(1,"%s failed for: %s\n","write",strerror(errno));
+		}
+		sleep(1);
+	}
+	close(fd);
+	printf("%d,close fd\n",getpid());
+}
 //////////////////////////////////////main///////////////////////////////////////////
 int main(){
 	int svrfd;
@@ -51,9 +64,11 @@ int main(){
 			printf_and_exit(1,"%s failed for: %s\n","accept",strerror(errno));
 		};
 		if((pid=fork())==0){
-			write_time(clifd);
-			close(clifd);
+			write_to_fd_and_close_it(clifd,20);
+			//write_time(clifd);
+			//close(clifd);
 		}
+		write_to_fd_and_close_it(clifd,10);
 	}
 	close(svrfd);
 	return 0;
